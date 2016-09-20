@@ -482,16 +482,15 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 	}
 }
 
-
 /*
-	N-class Soft KMeans segmentation
+N-class Soft KMeans segmentation
 
-	Resulting values are copied in parameters 'means' and 'stddev'.
-	The 'apriori' parameter contains the proportion of each class.
+Resulting values are copied in parameters 'means' and 'stddev'.
+The 'apriori' parameter contains the proportion of each class.
 
-	The resulting label Field is copied in the current image (this->MImgBuf)
+The resulting label Field is copied in the current image (this->MImgBuf)
 */
-void MImage::MSoftKMeansSegmentation(float *means,float *stddev,float *apriori,float beta, int nbClasses)
+void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori, float beta, int nbClasses)
 {
 	init_k_means(*this, means, nbClasses);
 	std::vector<std::vector<std::vector<float>>> map_black_white(MXS, std::vector<std::vector<float>>(MYS, std::vector<float>(nbClasses, 0.0f)));
@@ -513,6 +512,7 @@ void MImage::MSoftKMeansSegmentation(float *means,float *stddev,float *apriori,f
 
 		//finished calculate part of P(c|x_s), sum(e^-d_r)
 		std::vector<float> new_means(nbClasses, 0.0f);
+		std::vector<float> sum_denum_means(nbClasses, 0.0f);
 		for (int y = 0; y < MYSize(); y++)
 		{
 			for (int x = 0; x < MXSize(); x++)
@@ -520,41 +520,58 @@ void MImage::MSoftKMeansSegmentation(float *means,float *stddev,float *apriori,f
 				//calcul d_r
 				float d_r = 0.0f;
 				for (int i = 0; i < nbClasses; i++)
-					d_r += std::exp(beta * std::abs(map_black_white[x][y][i] - means[i]));
+					d_r += map_black_white[x][y][i];
 
 				for (int k = 0; k < nbClasses; k++) {
 					//P(c|x_s)
 					map_black_white[x][y][k] = map_black_white[x][y][k] / d_r;
 					//means
-					new_means[k] += (map_black_white[x][y][k] * MImgBuf[x][y].r) / map_black_white[x][y][k];
+					new_means[k] += (map_black_white[x][y][k] * MImgBuf[x][y].r);
+					sum_denum_means[k] += map_black_white[x][y][k];
 				}
 			}
+		}
+		//u_c
+		for (int k = 0; k < nbClasses; k++) {
+			new_means[k] = new_means[k] / sum_denum_means[k];
 		}
 
 		//apriori
 		for (int i = 0; i < nbClasses; i++)
 			apriori[i] = 0.0f;
 
+		std::vector<std::vector<float>> mu_classes(nbClasses);
 		for (int y = 0; y < MYSize(); y++)
 		{
 			for (int x = 0; x < MXSize(); x++)
 			{
 				int c = 0;
 				for (int k = 1; k < nbClasses; k++) {
-					if (std::abs(map_black_white[x][y][c] - map_black_white[x][y][k]) < FLT_EPSILON)
+					if (std::abs(map_black_white[x][y][c] - map_black_white[x][y][k]) < 0.5)
 						c = k;
 				}
+				mu_classes[c].push_back(MImgBuf[x][y].r);
 				apriori[c] += 1;
 			}
 		}
 
+		//stddev and apriori
+		for (int i = 0; i < nbClasses; i++)
+			stddev[i] = 0.0f;
 		for (int k = 0; k < nbClasses; k++) {
+			for (int i = 0; i < mu_classes[k].size(); i++) {
+				stddev[k] += std::pow(mu_classes[k][i] - new_means[k], 2);
+			}
+			if (mu_classes[k].size() != 0)
+				stddev[k] = std::sqrt(stddev[k] / mu_classes[k].size());
+			else
+				stddev[k] = 0;
 			apriori[k] = apriori[k] / (MXS * MYS);
-			if (std::abs(means[k] - new_means[k]) > FLT_EPSILON) {
+			if (std::abs(means[k] - new_means[k]) > 0.5) {
 				std::cout << means[k] << " ; " << new_means[k] << std::endl;
 				same_means = false;
 			}
-
+			std::cout << std::endl;
 			means[k] = new_means[k];
 		}
 	} while (!same_means);
