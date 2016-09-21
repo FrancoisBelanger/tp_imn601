@@ -389,6 +389,11 @@ void MImage::MOptimalThresholding(float *means, float *stddev, float *apriori, i
 
 void init_k_means(MImage &X_s, float *means, int nbClasses){
 	int k = 0;
+	//init means
+	for (int i = 0; i < nbClasses; i++) {
+		means[i] = 0.0f;
+	}
+
 	do{
 		int x = (std::rand() % 100 * 1.0f) / 100 * X_s.MXSize();
 		int y = (std::rand() % 100 * 1.0f) / 100 * X_s.MYSize();
@@ -438,7 +443,7 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 				//find mean of class more near than point (x,y)
 				int k = 0;
 				for (int i = 1; i < nbClasses; i++){
-					if (std::abs(means[k] - MImgBuf[x][y].r) > std::abs(means[i] - MImgBuf[x][y].r)){
+					if (fabs(means[k] - MImgBuf[x][y].r) > std::abs(means[i] - MImgBuf[x][y].r)){
 						k = i;
 					}
 				}
@@ -459,13 +464,13 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 			new_means = new_means / mu_classes[k].size();
 			//stddev
 			for (int i = 0; i < mu_classes[k].size(); i++) {
-				stddev[k] += std::pow(mu_classes[k][i] - new_means, 2);
+				stddev[k] += pow(mu_classes[k][i] - new_means, 2);
 			}
-			stddev[k] = std::sqrt(stddev[k] / mu_classes[k].size());
+			stddev[k] = sqrt(stddev[k] / mu_classes[k].size());
 			//apriori
 			apriori[k] = (mu_classes[k].size() * 1.0f) / (MXS * MYS);
 
-			if (std::abs(means[k] - new_means) > FLT_EPSILON){
+			if (fabs(means[k] - new_means) > FLT_EPSILON){
 				same_means = false;
 			}
 			means[k] = new_means;
@@ -483,12 +488,12 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 }
 
 /*
-N-class Soft KMeans segmentation
+	N-class Soft KMeans segmentation
 
-Resulting values are copied in parameters 'means' and 'stddev'.
-The 'apriori' parameter contains the proportion of each class.
+	Resulting values are copied in parameters 'means' and 'stddev'.
+	The 'apriori' parameter contains the proportion of each class.
 
-The resulting label Field is copied in the current image (this->MImgBuf)
+	The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori, float beta, int nbClasses)
 {
@@ -505,7 +510,7 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 			for (int x = 0; x < MXSize(); x++)
 			{
 				for (int k = 0; k < nbClasses; k++) {
-					map_black_white[x][y][k] = std::exp(-(beta * std::abs(MImgBuf[x][y].r - means[k])));
+					map_black_white[x][y][k] = exp(-(beta * std::abs(MImgBuf[x][y].r - means[k])));
 				}
 			}
 		}
@@ -534,12 +539,13 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 		//u_c
 		for (int k = 0; k < nbClasses; k++) {
 			new_means[k] = new_means[k] / sum_denum_means[k];
+
+			//init apriori and stddev
+			apriori[k] = 0.0f;
+			stddev[k] = 0.0f;
 		}
 
 		//apriori
-		for (int i = 0; i < nbClasses; i++)
-			apriori[i] = 0.0f;
-
 		std::vector<std::vector<float>> mu_classes(nbClasses);
 		for (int y = 0; y < MYSize(); y++)
 		{
@@ -547,7 +553,7 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 			{
 				int c = 0;
 				for (int k = 1; k < nbClasses; k++) {
-					if (std::abs(map_black_white[x][y][c] - map_black_white[x][y][k]) < 0.5)
+					if (fabs(map_black_white[x][y][c] - map_black_white[x][y][k]) < 0.5)
 						c = k;
 				}
 				mu_classes[c].push_back(MImgBuf[x][y].r);
@@ -555,23 +561,20 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 			}
 		}
 
-		//stddev and apriori
-		for (int i = 0; i < nbClasses; i++)
-			stddev[i] = 0.0f;
+		//stddev and finish apriori
 		for (int k = 0; k < nbClasses; k++) {
 			for (int i = 0; i < mu_classes[k].size(); i++) {
-				stddev[k] += std::pow(mu_classes[k][i] - new_means[k], 2);
+				//(x-mu)^2
+				stddev[k] += pow(mu_classes[k][i] - new_means[k], 2);
 			}
 			if (mu_classes[k].size() != 0)
-				stddev[k] = std::sqrt(stddev[k] / mu_classes[k].size());
-			else
-				stddev[k] = 0;
+				stddev[k] = sqrt(stddev[k] / mu_classes[k].size());
 			apriori[k] = apriori[k] / (MXS * MYS);
-			if (std::abs(means[k] - new_means[k]) > 0.5) {
-				std::cout << means[k] << " ; " << new_means[k] << std::endl;
+			if (fabs(means[k] - new_means[k]) > 0.5) {
+				//std::cout << means[k] << " ; " << new_means[k] << std::endl;
 				same_means = false;
 			}
-			std::cout << std::endl;
+			//std::cout << std::endl;
 			means[k] = new_means[k];
 		}
 	} while (!same_means);
