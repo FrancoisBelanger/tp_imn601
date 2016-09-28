@@ -33,22 +33,23 @@ int main(int argc, char **argv)
 	img1.MLoadImage(argv[1]);
 	img2 = img1;
 
-	//printf("\n***********************************\n");
-	//printf("****    K-Means       *************\n");
-	//printf("***********************************\n");
-	//img2.MKMeansSegmentation(means, stddev, apriori, nbClasses);
+	printf("\n***********************************\n");
+	printf("****    K-Means       *************\n");
+	printf("***********************************\n");
+	img2.MKMeansSegmentation(means, stddev, apriori, nbClasses);
 
-	//printf(" Means : "); for (int i = 0; i<nbClasses; i++) printf(" %f", means[i]);
-	//printf("\n Stddev : "); for (int i = 0; i<nbClasses; i++) printf(" %f", stddev[i]);
-	//printf("\n Prior : "); for (int i = 0; i<nbClasses; i++) printf(" %f", apriori[i]);
-	//img2.MRescale();
-	//img2.MSaveImage("outKMeans.pgm", PGM_ASCII);
+	printf(" Means : "); for (int i = 0; i<nbClasses; i++) printf(" %f", means[i]);
+	printf("\n Stddev : "); for (int i = 0; i<nbClasses; i++) printf(" %f", stddev[i]);
+	printf("\n Prior : "); for (int i = 0; i<nbClasses; i++) printf(" %f", apriori[i]);
+	img2.MRescale();
+	std::cout << std::endl;
+	img2.MSaveImage("outKMeans.pgm", PGM_ASCII);
 
-	///*****     Optimal Thresholding               ************************/
-	//img2 = img1;
-	//img2.MOptimalThresholding(means, stddev, apriori, nbClasses);
-	//img2.MRescale();
-	//img2.MSaveImage("outOptimalThresholdingKM.pgm", PGM_ASCII);
+	/*****     Optimal Thresholding               ************************/
+	img2 = img1;
+	img2.MOptimalThresholding(means, stddev, apriori, nbClasses);
+	img2.MRescale();
+	img2.MSaveImage("outOptimalThresholdingKM.pgm", PGM_ASCII);
 
 
 	/*********************************************************************/
@@ -68,6 +69,7 @@ int main(int argc, char **argv)
 	img2 = img1;
 	img2.MOptimalThresholding(means, stddev, apriori, nbClasses);
 	img2.MRescale();
+	std::cout << std::endl;
 	img2.MSaveImage("outOptimalThresholdingSKM.pgm", PGM_ASCII);
 
 
