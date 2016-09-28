@@ -1,8 +1,14 @@
+/*
+	Francois Belanger 94 245 437
+	Genevieve Dostie
+*/
+
 #include "MImage.h"
 #include "stdio.h"
 #include "stdlib.h"
-#include "math.h"
-#include "gc/GCoptimization.h"
+#include <cmath>
+//#include "gc/GCoptimization.h"
+#include <limits>
 #include <algorithm>
 
 MImage::MImage(int xs,int ys,int zs)
@@ -157,11 +163,15 @@ bool MImage::MLoadImage(const char *fileName)
 				}
 		break;
 
+		default:
+			printf("Error!!! cant read that format. Please use PGM_ASCII\n");
+			inFile.close();
+			return false;
 	}
 
-    inFile.close();
+	inFile.close();
  	printf("File %s opened successfully\n",fileName);
-    return true;
+	return true;
 }
 
 /*
@@ -191,6 +201,11 @@ bool MImage::MSaveImage(const char *fileName, FILE_FORMAT ff)
 				outFile << "\n";
 			}
 		break;
+
+		default:
+			printf("Error!!! can't write that format. Please use PGM_ASCII\n");
+ 			outFile.close();
+			return false;
 	}
  	outFile.close();
 	printf("File %s saved successfully\n",fileName);
@@ -329,7 +344,7 @@ void innondation(MImage &X_s, std::vector<std::vector<int>> &Y_s, int xSeed, int
 void MImage::MMagicWand(int xSeed, int ySeed, float tolerance)
 {
 	std::vector<std::vector<int>> map_black_white;
-	map_black_white = std::vector<std::vector<int>>(MXS, std::vector<int>(MYS, -1));
+	map_black_white = std::vector<std::vector<int> >(MXS, std::vector<int>(MYS, -1));
 	map_black_white[xSeed][ySeed] = 1;
 	innondation(*this, map_black_white, xSeed, ySeed, tolerance, MGetColor(xSeed, ySeed));
 
@@ -429,13 +444,13 @@ void init_k_means(MImage &X_s, float *means, int nbClasses){
 void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, int nbClasses)
 {
 	init_k_means(*this, means, nbClasses);
-	std::vector<std::vector<int>> map_black_white(MXS, std::vector<int>(MYS, 0));
+	std::vector<std::vector<int> > map_black_white(MXS, std::vector<int>(MYS, 0));
 
 	//Calculate means while mean not converge 
 	bool same_means = true;
 	do{
 		same_means = true;
-		std::vector<std::vector<float>> mu_classes(nbClasses);
+		std::vector<std::vector<float> > mu_classes(nbClasses);
 		for (int y = 0; y < MYSize(); y++)
 		{
 			for (int x = 0; x < MXSize(); x++)
@@ -470,7 +485,7 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 			//apriori
 			apriori[k] = (mu_classes[k].size() * 1.0f) / (MXS * MYS);
 
-			if (fabs(means[k] - new_means) > FLT_EPSILON){
+			if (fabs(means[k] - new_means) > std::numeric_limits<float>::epsilon()){
 				same_means = false;
 			}
 			means[k] = new_means;
@@ -498,7 +513,7 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori, float beta, int nbClasses)
 {
 	init_k_means(*this, means, nbClasses);
-	std::vector<std::vector<std::vector<float>>> map_black_white(MXS, std::vector<std::vector<float>>(MYS, std::vector<float>(nbClasses, 0.0f)));
+	std::vector<std::vector<std::vector<float> > > map_black_white(MXS, std::vector<std::vector<float> >(MYS, std::vector<float>(nbClasses, 0.0f)));
 
 	//Calculate means while mean not converge
 	bool same_means = true;
@@ -546,7 +561,7 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 		}
 
 		//apriori
-		std::vector<std::vector<float>> mu_classes(nbClasses);
+		std::vector<std::vector<float> > mu_classes(nbClasses);
 		for (int y = 0; y < MYSize(); y++)
 		{
 			for (int x = 0; x < MXSize(); x++)
