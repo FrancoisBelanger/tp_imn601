@@ -1,3 +1,8 @@
+/*
+	Francois Belanger 94 245 437
+	Genevieve Dostie
+*/
+
 #ifndef IMAGE_CLASS_H__
 #define IMAGE_CLASS_H__
 #include "stdlib.h"

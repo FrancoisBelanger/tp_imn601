@@ -1,3 +1,8 @@
+/*
+	Francois Belanger 94 245 437
+	Genevieve Dostie
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -5,19 +10,17 @@
 #include "MImage.h"
 
 /*
-"C:\Users\Genevieve\Google Drive\UdS\4e année\6e session\IMN601\TP\prog\mixtFourGaussians.pgm" 0.1 4
-
-"optimal" thresholding, K-means, Soft K-means, and EM
+	"optimal" thresholding, K-means, Soft K-means, and EM
 */
 int main(int argc, char **argv)
 {
-	MImage img1, img2;
+	MImage img1,img2;
 	float *means;
 	float *stddev;
 	float *apriori;
 	int nbClasses;
 
-	if (argc<4){
+	if(argc<4){
 		printf("\n Usage : tp1B image beta nbClasses\n\n");
 		return 1;
 	}
@@ -36,6 +39,7 @@ int main(int argc, char **argv)
 	printf("\n***********************************\n");
 	printf("****    K-Means       *************\n");
 	printf("***********************************\n");
+<<<<<<< HEAD
 	img2.MKMeansSegmentation(means, stddev, apriori, nbClasses);
 
 	printf(" Means : "); for (int i = 0; i<nbClasses; i++) printf(" %f", means[i]);
@@ -50,6 +54,21 @@ int main(int argc, char **argv)
 	img2.MOptimalThresholding(means, stddev, apriori, nbClasses);
 	img2.MRescale();
 	img2.MSaveImage("outOptimalThresholdingKM.pgm", PGM_ASCII);
+=======
+	img2.MKMeansSegmentation(means,stddev,apriori,nbClasses);
+
+	printf(" Means : "); for(int i=0;i<nbClasses;i++) printf(" %f",means[i]);
+	printf("\n Stddev : "); for(int i=0;i<nbClasses;i++) printf(" %f",stddev[i]);
+	printf("\n Prior : "); for(int i=0;i<nbClasses;i++) printf(" %f",apriori[i]);
+	img2.MRescale();
+	img2.MSaveImage("outKMeans.pgm",PGM_ASCII);
+
+	/*****     Optimal Thresholding               ************************/
+	img2 = img1;
+	img2.MOptimalThresholding(means,stddev,apriori,nbClasses);
+	img2.MRescale();
+	img2.MSaveImage("outOptimalThresholdingKM.pgm",PGM_ASCII);
+>>>>>>> 7d8ac4c98dfc46537deaf4b266b093886cc3c5bd
 
 
 	/*********************************************************************/
@@ -59,43 +78,47 @@ int main(int argc, char **argv)
 	printf("\n***********************************\n");
 	printf("****   Soft K-Means       *********\n");
 	printf("***********************************\n");
-	img2.MSoftKMeansSegmentation(means, stddev, apriori, atof(argv[2]), nbClasses);
+	img2.MSoftKMeansSegmentation(means,stddev,apriori,atof(argv[2]),nbClasses);
 
-	printf(" Means : "); for (int i = 0; i<nbClasses; i++) printf(" %f", means[i]);
-	printf("\n Stddev : "); for (int i = 0; i<nbClasses; i++) printf(" %f", stddev[i]);
-	printf("\n Prior : "); for (int i = 0; i<nbClasses; i++) printf(" %f", apriori[i]);
+	printf(" Means : "); for(int i=0;i<nbClasses;i++) printf(" %f",means[i]);
+	printf("\n Stddev : "); for(int i=0;i<nbClasses;i++) printf(" %f",stddev[i]);
+	printf("\n Prior : "); for(int i=0;i<nbClasses;i++) printf(" %f",apriori[i]);
 
-	///*****     Optimal Thresholding               ************************/
+	/*****     Optimal Thresholding               ************************/
 	img2 = img1;
-	img2.MOptimalThresholding(means, stddev, apriori, nbClasses);
+	img2.MOptimalThresholding(means,stddev,apriori,nbClasses);
 	img2.MRescale();
+<<<<<<< HEAD
 	std::cout << std::endl;
 	img2.MSaveImage("outOptimalThresholdingSKM.pgm", PGM_ASCII);
+=======
+	img2.MSaveImage("outOptimalThresholdingSKM.pgm",PGM_ASCII);
+>>>>>>> 7d8ac4c98dfc46537deaf4b266b093886cc3c5bd
 
 
 
 	/*********************************************************************/
 	/*****      Expectation Maximization          ************************/
 	/*********************************************************************/
-	//img2 = img1;
-	//printf("\n***********************************\n");
-	//printf("****  Expectation-Maximization   ****\n");
-	//printf("***********************************\n");
-	//img2.MExpectationMaximization(means, stddev, apriori, nbClasses);
+	img2 = img1;
+	printf("\n***********************************\n");
+	printf("****  Expectation-Maximization   ****\n");
+	printf("***********************************\n");
+	img2.MExpectationMaximization(means,stddev,apriori,nbClasses);
 
-	//printf(" Means : "); for (int i = 0; i<nbClasses; i++) printf(" %f", means[i]);
-	//printf("\n Stddev : "); for (int i = 0; i<nbClasses; i++) printf(" %f", stddev[i]);
-	//printf("\n Prior : "); for (int i = 0; i<nbClasses; i++) printf(" %f", apriori[i]);
+	printf(" Means : "); for(int i=0; i<nbClasses; i++) printf(" %f", means[i]);
+	printf("\n Stddev : "); for(int i=0; i<nbClasses; i++) printf(" %f", stddev[i]);
+	printf("\n Prior : "); for(int i=0; i<nbClasses; i++) printf(" %f", apriori[i]);
 
-	///*****     Optimal Thresholding               ************************/
-	//img2 = img1;
-	//img2.MOptimalThresholding(means, stddev, apriori, nbClasses);
-	//img2.MRescale();
-	//img2.MSaveImage("outOptimalThresholdingEM.pgm", PGM_ASCII);
+	/*****     Optimal Thresholding               ************************/
+	img2 = img1;
+	img2.MOptimalThresholding(means, stddev, apriori, nbClasses);
+	img2.MRescale();
+	img2.MSaveImage("outOptimalThresholdingEM.pgm", PGM_ASCII);
 
 
-	delete[]means;
-	delete[]stddev;
-	delete[]apriori;
+	delete[] means;
+	delete[] stddev;
+	delete[] apriori;
 	return 0;
 }
