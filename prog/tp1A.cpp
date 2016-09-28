@@ -1,3 +1,8 @@
+/*
+	Francois Belanger 94 245 437
+	Genevieve Dostie
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -5,11 +10,9 @@
 #include "MImage.h"
 
 /*
-	"C:\Users\Genevieve\Google Drive\UdS\4e année\6e session\IMN601\TP\prog\satelliteIles.pgm" 90 120 35
-
 	Magic wang image segmentation	
 */ 
-int main1(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	MImage img;
 	
