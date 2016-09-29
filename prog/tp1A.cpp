@@ -12,7 +12,7 @@
 /*
 	Magic wang image segmentation	
 */ 
-int main(int argc, char **argv)
+int main1(int argc, char **argv)
 {
 	MImage img;
 	

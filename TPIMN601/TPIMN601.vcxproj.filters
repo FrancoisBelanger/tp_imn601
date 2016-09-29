@@ -18,15 +18,9 @@
     <ClCompile Include="..\prog\MImage.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\prog\tp1A.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
     <ClCompile Include="..\prog\tp1B.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\prog\Makefile" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\prog\MImage.h">
