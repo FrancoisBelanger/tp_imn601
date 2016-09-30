@@ -112,7 +112,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\prog\MImage.cpp" />
-    <ClCompile Include="..\prog\tp1B.cpp" />
+    <ClCompile Include="..\prog\tp1E.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\prog\MImage.h" />

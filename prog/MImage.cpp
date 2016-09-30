@@ -304,10 +304,8 @@ void MImage::MRescale(void)
 Mean shift filtering
 
 the implementation is inspired of the following paper
-
 D. Comanicu, P. Meer: "Mean shift: A robust approach toward feature space analysis".
 IEEE Trans. Pattern Anal. Machine Intell., May 2002.
-
 The resulting filtered image is copied in the current image (this->MImgBuf)
 */
 void MImage::MMeanShift(float SpatialBandWidth, float RangeBandWidth, float tolerance)
@@ -339,10 +337,8 @@ void innondation(MImage &X_s, std::vector<std::vector<int>> &Y_s, int xSeed, int
 
 /*
 Segmentation with magic wand algorithm
-
 (xSeed, ySeed) is where the region starts growing and
 tolerance is the criteria to stop the region from growing.
-
 */
 void MImage::MMagicWand(int xSeed, int ySeed, float tolerance)
 {
@@ -370,7 +366,6 @@ void MImage::MMagicWand(int xSeed, int ySeed, float tolerance)
 /*
 N-class segmentation.  Each class is a Gaussian function defined by
 a mean, stddev and prior value.
-
 The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MOptimalThresholding(float *means, float *stddev, float *apriori, int nbClasses)
@@ -438,10 +433,8 @@ void init_k_means(MImage &X_s, float *means, int nbClasses) {
 
 /*
 N-class KMeans segmentation
-
 Resulting values are copied in parameters 'means','stddev', and 'apriori'
 The 'apriori' parameter contains the proportion of each class.
-
 The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, int nbClasses)
@@ -507,10 +500,8 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 
 /*
 N-class Soft KMeans segmentation
-
 Resulting values are copied in parameters 'means' and 'stddev'.
 The 'apriori' parameter contains the proportion of each class.
-
 The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori, float beta, int nbClasses)
@@ -603,24 +594,18 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 N-class Expectation maximization segmentation
 
 init values are in 'means', 'stddev' and 'apriori'
-
 Resulting values are copied in parameters 'means', 'stddev' and 'apriori'
 The 'apriori' parameter contains the proportion of each class.
-
 The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MExpectationMaximization(float *means, float *stddev, float *apriori, int nbClasses)
 {
-
 }
 
 /*
 N-class ICM segmentation
-
 beta : Constant multiplying the apriori function
-
 The resulting label Field is copied in the current image (this->MImgBuf)
-
 */
 void MImage::MICMSegmentation(float beta, int nbClasses)
 {
@@ -628,14 +613,11 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 
 /*
 N-class Simulated annealing segmentation
-
 beta : Constant multiplying the apriori function
 Tmax : Initial temperature (initial temperature)
 Tmin : Minimal temperature allowed (final temperature)
 coolingRate : rate by which the temperature decreases
-
 The label Field copied in the current image (this->MImgBuf)
-
 */
 void MImage::MSASegmentation(float beta, float Tmin, float Tmax, float coolingRate, int nbClasses)
 {
@@ -647,10 +629,8 @@ void MImage::MSASegmentation(float beta, float Tmin, float Tmax, float coolingRa
 Interactive graph cut segmentation
 
 the implementation is inspired of the following paper
-
 Y Boykov and M-P Jolly "Interactive Graph Cuts for Optimal Boundary & Region Segmentation of Objects in N-D images".
 In International Conference on Computer Vision, (ICCV), vol. I, pp. 105-112, 2001.
-
 The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MInteractiveGraphCutSegmentation(MImage &mask, float sigma)
@@ -709,4 +689,3 @@ float MImage::MComputeGlobalEnergy(const MImage &X, float *mean, float *stddev, 
 {
 	return 0.0;
 }
-
