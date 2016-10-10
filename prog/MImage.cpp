@@ -10,6 +10,7 @@ Genevieve Dostie 12 078 306
 #include "gc/GCoptimization.h"
 #include <limits>
 #include <algorithm>
+#include <time.h>
 
 MImage::MImage(int xs, int ys, int zs)
 {
@@ -644,7 +645,7 @@ The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MICMSegmentation(float beta, int nbClasses)
 {
-	MImage img_prev, img_orig;
+	MImage img_orig;
 	float *means;
 	float *stddev;
 	float *apriori;
@@ -653,18 +654,9 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 	apriori = new float[nbClasses];
 	img_orig = *this;
 	std::vector<std::vector<int>> map_black_white = MKMeansSegmentation(means, stddev, apriori, nbClasses);
-
-	/*img_prev = *this;
-	printf(" Means : "); for (int i = 0; i<nbClasses; i++) printf(" %f", means[i]);
-	printf("\n Stddev : "); for (int i = 0; i<nbClasses; i++) printf(" %f", stddev[i]);
-	printf("\n Prior : "); for (int i = 0; i<nbClasses; i++) printf(" %f", apriori[i]);
-	printf("\n");
-	img_prev.MRescale();
-	img_prev.MSaveImage("outKMeans.pgm", PGM_ASCII);*/
 	
 	bool same_means = true;
 	do{
-		//img_prev = *this;
 		same_means = true;
 		int nb_pxl_diff = 0;
 		std::vector<std::vector<float> > mu_classes(nbClasses);
@@ -686,7 +678,6 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 						tag_min = k;
 					}
 				}
-				//MImgBuf[x][y].r = ((tag_min * 1.0f) / (nbClasses - 1)) * 255.0f;
 				mu_classes[tag_min].push_back(img_orig.MImgBuf[x][y].r);
 				if (tag_min != map_black_white[x][y]) {
 					same_means = false;
@@ -701,7 +692,6 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 		for (int k = 0; k < nbClasses; k++) {
 			float new_means = 0.0f;
 			stddev[k] = 0.0f;
-
 			//means
 			for (int i = 0; i < mu_classes[k].size(); i++) {
 				new_means += mu_classes[k][i];
@@ -712,23 +702,20 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 				stddev[k] += pow(mu_classes[k][i] - new_means, 2);
 			}
 			stddev[k] = sqrt(stddev[k] / mu_classes[k].size());
-			//apriori
-			apriori[k] = (mu_classes[k].size() * 1.0f) / (MXS * MYS);
-
-			if (fabs(means[k] - new_means) > std::numeric_limits<float>::epsilon()) {
-				same_means = false;
-			}
 			means[k] = new_means;
 		}
-
 	} while (!same_means);
+
+	delete[] means;
+	delete[] stddev;
+	delete[] apriori;
 
 	//new image
 	for (int y = 0; y < MYSize(); y++)
 	{
 		for (int x = 0; x < MXSize(); x++)
 		{
-			MImgBuf[x][y].r = ((map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
+			MImgBuf[x][y].r = (((nbClasses - 1) - map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
 		}
 	}
 }
@@ -743,6 +730,82 @@ The label Field copied in the current image (this->MImgBuf)
 */
 void MImage::MSASegmentation(float beta, float Tmin, float Tmax, float coolingRate, int nbClasses)
 {
+	//we assume that this will always nbClasses == 2
+	if (nbClasses != 2)
+		nbClasses = 2;
+
+	MImage img_orig;
+	float *means;
+	float *stddev;
+	float *apriori;
+	means = new float[nbClasses];
+	stddev = new float[nbClasses];
+	apriori = new float[nbClasses];
+	img_orig = *this;
+	std::vector<std::vector<int>> map_black_white = MKMeansSegmentation(means, stddev, apriori, nbClasses);
+
+	float T = Tmax;
+	do {
+		int nb_pxl_diff = 0;
+		std::vector<std::vector<float> > mu_classes(nbClasses);
+		for (int y = 0; y < MYSize(); y++)
+		{
+			for (int x = 0; x < MXSize(); x++)
+			{
+				float *p = new float[nbClasses];
+				float sum_p = 0.0f;
+				int *w = new int[nbClasses];
+				calculate_w(w, map_black_white, x, y, means, nbClasses);
+				for (int k = 0; k < nbClasses; k++) {
+					float u = -std::log(exp(-pow(img_orig.MImgBuf[x][y].r * 1.0f - means[k], 2) / (2 * pow(stddev[k], 2))) / (stddev[k] * pow(2 * M_PI, 0.5)));
+					p[k] = exp(-(u + w[k]) / T);
+					sum_p += p[k];
+				}
+				if (sum_p > 1) {
+					for (int k = 0; k < nbClasses; k++) {
+						p[k] = p[k] / sum_p;
+					}
+				}
+
+				float p_random = ((rand() * time(NULL)) % 100) / 100.0f;
+				if (p_random < p[0])
+					map_black_white[x][y] = 1;
+				else
+					map_black_white[x][y] = 0;
+			}
+		}
+
+		//calculate new means, new stddev and new apriori
+		for (int k = 0; k < nbClasses; k++) {
+			float new_means = 0.0f;
+			stddev[k] = 0.0f;
+			//means
+			for (int i = 0; i < mu_classes[k].size(); i++) {
+				new_means += mu_classes[k][i];
+			}
+			new_means = new_means / mu_classes[k].size();
+			//stddev
+			for (int i = 0; i < mu_classes[k].size(); i++) {
+				stddev[k] += pow(mu_classes[k][i] - new_means, 2);
+			}
+			stddev[k] = sqrt(stddev[k] / mu_classes[k].size());
+			means[k] = new_means;
+		}
+		T = T * coolingRate;
+	} while (T > Tmin);
+
+	delete[] means;
+	delete[] stddev;
+	delete[] apriori;
+
+	//new image
+	for (int y = 0; y < MYSize(); y++)
+	{
+		for (int x = 0; x < MXSize(); x++)
+		{
+			MImgBuf[x][y].r = (((nbClasses - 1) - map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
+		}
+	}
 }
 
 
