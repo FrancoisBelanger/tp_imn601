@@ -111,10 +111,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\prog\gc\GCoptimization.cpp" />
+    <ClCompile Include="..\prog\gc\graph.cpp" />
+    <ClCompile Include="..\prog\gc\LinkedBlockList.cpp" />
+    <ClCompile Include="..\prog\gc\maxflow.cpp" />
     <ClCompile Include="..\prog\MImage.cpp" />
+    <ClCompile Include="..\prog\tp1C.cpp" />
     <ClCompile Include="..\prog\tp1E.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\prog\gc\block.h" />
+    <ClInclude Include="..\prog\gc\energy.h" />
+    <ClInclude Include="..\prog\gc\GCoptimization.h" />
+    <ClInclude Include="..\prog\gc\graph.h" />
+    <ClInclude Include="..\prog\gc\LinkedBlockList.h" />
     <ClInclude Include="..\prog\MImage.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
