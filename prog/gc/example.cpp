@@ -398,7 +398,7 @@ void GeneralGraph_DArraySArraySpatVarying(int width,int height,int num_pixels,in
 }
 ////////////////////////////////////////////////////////////////////////////////
 
-int main(int argc, char **argv)
+int main1(int argc, char **argv)
 {
 	int width = 10;
 	int height = 5;

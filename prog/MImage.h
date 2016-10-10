@@ -1,6 +1,6 @@
 /*
 	Francois Belanger 94 245 437
-	Genevieve Dostie
+	Genevieve Dostie  12 078 306
 */
 
 #ifndef IMAGE_CLASS_H__

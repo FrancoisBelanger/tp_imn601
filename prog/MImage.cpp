@@ -1,13 +1,13 @@
 /*
 Francois Belanger 94 245 437
-Genevieve Dostie
+Genevieve Dostie 12 078 306
 */
 
 #include "MImage.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include <cmath>
-//#include "gc/GCoptimization.h"
+#include "gc/GCoptimization.h"
 #include <limits>
 #include <algorithm>
 
@@ -454,7 +454,7 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 				//find mean of class more near than point (x,y)
 				int k = 0;
 				for (int i = 1; i < nbClasses; i++) {
-					if (fabs(means[k] - MImgBuf[x][y].r) > std::abs(means[i] - MImgBuf[x][y].r)) {
+					if (abs(means[k] - MImgBuf[x][y].r) > std::abs(means[i] - MImgBuf[x][y].r)) {
 						k = i;
 					}
 				}
@@ -602,6 +602,36 @@ void MImage::MExpectationMaximization(float *means, float *stddev, float *aprior
 {
 }
 
+void calculate_w(int *w, MImage &X_s, int xSeed, int ySeed, float *means, int nbClasses) {
+	std::vector<std::pair<int, int>> x_y;
+	x_y.push_back(std::pair<int, int>(xSeed + 1, ySeed));
+	x_y.push_back(std::pair<int, int>(xSeed - 1, ySeed));
+	x_y.push_back(std::pair<int, int>(xSeed, ySeed + 1));
+	x_y.push_back(std::pair<int, int>(xSeed, ySeed - 1));
+
+	x_y.push_back(std::pair<int, int>(xSeed + 1, ySeed + 1));
+	x_y.push_back(std::pair<int, int>(xSeed - 1, ySeed - 1));
+	x_y.push_back(std::pair<int, int>(xSeed + 1, ySeed - 1));
+	x_y.push_back(std::pair<int, int>(xSeed - 1, ySeed + 1));
+
+	for (int k = 0; k < nbClasses; k++) {
+		w[k] = 0;
+	}
+
+	for (auto i = x_y.begin(); i != x_y.end(); i++) {
+		if (i->first >= 0 && i->first < X_s.MXSize() && i->second >= 0 && i->second < X_s.MYSize()) {
+			//find mean of class more near than point (x,y)
+			int k = 0;
+			for (int j = 1; j < nbClasses; j++) {
+				if (abs(means[k] - X_s.MGetColor(i->first, i->second)) > std::abs(means[j] - X_s.MGetColor(i->first, i->second))) {
+					k = j;
+				}
+			}
+			w[k] += 1;
+		}
+	}
+}
+
 /*
 N-class ICM segmentation
 beta : Constant multiplying the apriori function
@@ -609,6 +639,84 @@ The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MICMSegmentation(float beta, int nbClasses)
 {
+	MImage img_prev, img_orig;
+	float *means;
+	float *stddev;
+	float *apriori;
+	means = new float[nbClasses];
+	stddev = new float[nbClasses];
+	apriori = new float[nbClasses];
+	img_orig = *this;
+	MKMeansSegmentation(means, stddev, apriori, nbClasses);
+
+	/*img_prev = *this;
+	printf(" Means : "); for (int i = 0; i<nbClasses; i++) printf(" %f", means[i]);
+	printf("\n Stddev : "); for (int i = 0; i<nbClasses; i++) printf(" %f", stddev[i]);
+	printf("\n Prior : "); for (int i = 0; i<nbClasses; i++) printf(" %f", apriori[i]);
+	printf("\n");
+	img_prev.MRescale();
+	img_prev.MSaveImage("outKMeans.pgm", PGM_ASCII);*/
+
+	/*std::vector<std::vector<int> > map_black_white(MXS, std::vector<int>(MYS, 0));*/
+	bool same_means = true;
+	do{
+		img_prev = *this;
+		same_means = true;
+		int nb_pxl_diff = 0;
+		std::vector<std::vector<float> > mu_classes(nbClasses);
+		for (int y = 0; y < MYSize(); y++)
+		{
+			for (int x = 0; x < MXSize(); x++)
+			{
+				float *tag;
+				tag = new float[nbClasses];
+
+				int tag_min = 0;
+				int *w;
+				w = new int[nbClasses];
+				calculate_w(w, img_prev, x, y, means, nbClasses);
+				for (int k = 0; k < nbClasses; k++) {
+					float u = -std::log(exp(-pow(img_prev.MImgBuf[x][y].r * 1.0f - means[k], 2) / (2 * pow(stddev[k], 2))) / (stddev[k] * pow(2 * M_PI, 0.5)));
+					tag[k] = u + (w[k] * beta);
+					if (tag_min != k && (tag[k] - tag[tag_min]) < 0.0f) {
+						tag_min = k;
+					}
+				}
+				MImgBuf[x][y].r = ((tag_min * 1.0f) / (nbClasses - 1)) * 255.0f;
+				mu_classes[tag_min].push_back(img_orig.MImgBuf[x][y].r);
+				if (abs(MImgBuf[x][y].r - img_prev.MImgBuf[x][y].r) > 1.0f) {
+					same_means = false;
+					nb_pxl_diff++;
+				}
+			}
+		}
+		printf("\n diff pxl: %i", nb_pxl_diff);
+
+		//calculate new means, new stddev and new apriori
+		for (int k = 0; k < nbClasses; k++) {
+			float new_means = 0.0f;
+			stddev[k] = 0.0f;
+
+			//means
+			for (int i = 0; i < mu_classes[k].size(); i++) {
+				new_means += mu_classes[k][i];
+			}
+			new_means = new_means / mu_classes[k].size();
+			//stddev
+			for (int i = 0; i < mu_classes[k].size(); i++) {
+				stddev[k] += pow(mu_classes[k][i] - new_means, 2);
+			}
+			stddev[k] = sqrt(stddev[k] / mu_classes[k].size());
+			//apriori
+			apriori[k] = (mu_classes[k].size() * 1.0f) / (MXS * MYS);
+
+			if (fabs(means[k] - new_means) > std::numeric_limits<float>::epsilon()) {
+				same_means = false;
+			}
+			means[k] = new_means;
+		}
+
+	} while (!same_means);
 }
 
 /*
@@ -635,7 +743,44 @@ The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MInteractiveGraphCutSegmentation(MImage &mask, float sigma)
 {
+	//int *result = new int[num_pixels];   // stores result of optimization
 
+	try {
+		GCoptimizationGridGraph *gc = new GCoptimizationGridGraph(MXS, MYS, MZS);
+
+		//// first set up data costs individually
+		//for (int i = 0; i < num_pixels; i++)
+		//	for (int l = 0; l < num_labels; l++)
+		//		if (i < 25) {
+		//			if (l == 0) gc->setDataCost(i, l, 0);
+		//			else gc->setDataCost(i, l, 10);
+		//		}
+		//		else {
+		//			if (l == 5) gc->setDataCost(i, l, 0);
+		//			else gc->setDataCost(i, l, 10);
+		//}
+
+		//// next set up smoothness costs individually
+		//for (int l1 = 0; l1 < num_labels; l1++)
+		//	for (int l2 = 0; l2 < num_labels; l2++) {
+		//		int cost = (l1 - l2)*(l1 - l2) <= 4 ? (l1 - l2)*(l1 - l2) : 4;
+		//		gc->setSmoothCost(l1, l2, cost);
+		//}
+
+		//printf("\nBefore optimization energy is %d", gc->compute_energy());
+		//gc->expansion(2);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+		//printf("\nAfter optimization energy is %d", gc->compute_energy());
+
+		//for (int i = 0; i < num_pixels; i++)
+		//	result[i] = gc->whatLabel(i);
+
+		delete gc;
+	}
+	catch (GCException e) {
+		e.Report();
+	}
+
+	//delete[] result;
 }
 
 

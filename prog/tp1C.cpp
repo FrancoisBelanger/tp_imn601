@@ -8,6 +8,7 @@
 
 /*
 	ICM and Simulated anealing
+	"C:\Users\Genevieve\Git\TPIMN601\img\satelliteIles.pgm" 1 2
 */
 int main(int argc, char **argv)
 {
@@ -25,10 +26,10 @@ int main(int argc, char **argv)
 	img2.MRescale();
 	img2.MSaveImage("outICM.pgm",PGM_ASCII);
 
-	img2=img1;	
-	img2.MSASegmentation(atof(argv[2]),0.01,1000,0.98,atoi(argv[3]));
-	img2.MRescale();
-	img2.MSaveImage("outSA.pgm",PGM_ASCII);
+	//img2=img1;	
+	//img2.MSASegmentation(atof(argv[2]),0.01,1000,0.98,atoi(argv[3]));
+	//img2.MRescale();
+	//img2.MSaveImage("outSA.pgm",PGM_ASCII);
 
 	return 0;
 }

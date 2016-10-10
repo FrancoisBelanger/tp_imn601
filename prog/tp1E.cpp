@@ -5,9 +5,10 @@
 #include "MImage.h"
 
 /*
-	Graph cut interactive segmentation	
+	Graph cut interactive segmentation
+	"C:\Users\Genevieve\Git\TPIMN601\img\lena.pgm" "C:\Users\Genevieve\Git\TPIMN601\img\mask.pgm" 10
 */ 
-int main(int argc, char **argv)
+int main2(int argc, char **argv)
 {
 	MImage img;
 	MImage mask;
