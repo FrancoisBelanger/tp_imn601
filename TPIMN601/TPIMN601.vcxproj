@@ -117,6 +117,7 @@
     <ClCompile Include="..\prog\gc\maxflow.cpp" />
     <ClCompile Include="..\prog\MImage.cpp" />
     <ClCompile Include="..\prog\tp1C.cpp" />
+    <ClCompile Include="..\prog\tp1D.cpp" />
     <ClCompile Include="..\prog\tp1E.cpp" />
   </ItemGroup>
   <ItemGroup>

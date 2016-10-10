@@ -626,14 +626,6 @@ void calculate_w(int *w, std::vector<std::vector<int>> &map_black_white, int xSe
 				if (map_black_white[i->first][i->second] != k)
 					w[k] += 1;
 			}
-			//find mean of class more near than point (x,y)
-			/*int k = 0;
-			for (int j = 1; j < nbClasses; j++) {
-				if (abs(means[k] - X_s.MGetColor(i->first, i->second)) > std::abs(means[j] - X_s.MGetColor(i->first, i->second))) {
-					k = j;
-				}
-			}
-			w[k] += 1;*/
 		}
 	}
 }
@@ -744,10 +736,13 @@ void MImage::MSASegmentation(float beta, float Tmin, float Tmax, float coolingRa
 	img_orig = *this;
 	std::vector<std::vector<int>> map_black_white = MKMeansSegmentation(means, stddev, apriori, nbClasses);
 
-	float T = Tmax;
+	float T = Tmax; 
+	bool same_means = true;
 	do {
+		same_means = true;
 		int nb_pxl_diff = 0;
 		std::vector<std::vector<float> > mu_classes(nbClasses);
+
 		for (int y = 0; y < MYSize(); y++)
 		{
 			for (int x = 0; x < MXSize(); x++)
@@ -766,33 +761,49 @@ void MImage::MSASegmentation(float beta, float Tmin, float Tmax, float coolingRa
 						p[k] = p[k] / sum_p;
 					}
 				}
-
+				int tag = 0;
 				float p_random = ((rand() * time(NULL)) % 100) / 100.0f;
-				if (p_random < p[0])
-					map_black_white[x][y] = 1;
-				else
-					map_black_white[x][y] = 0;
+				if ((p_random - p[0]) < 0) {
+					tag = 1;
+					mu_classes[1].push_back(img_orig.MImgBuf[x][y].r);
+				}
+				else {
+					tag = 0;
+					mu_classes[0].push_back(img_orig.MImgBuf[x][y].r);
+				}
+
+				if (tag != map_black_white[x][y]) {
+					same_means = false;
+					nb_pxl_diff++;
+				}
+
+				map_black_white[x][y] = tag;
 			}
 		}
+		printf("\n diff pxl: %i", nb_pxl_diff);
 
 		//calculate new means, new stddev and new apriori
 		for (int k = 0; k < nbClasses; k++) {
 			float new_means = 0.0f;
 			stddev[k] = 0.0f;
-			//means
-			for (int i = 0; i < mu_classes[k].size(); i++) {
-				new_means += mu_classes[k][i];
+			if (mu_classes[k].size() > 0) {
+				//means
+				for (int i = 0; i < mu_classes[k].size(); i++) {
+					new_means += mu_classes[k][i];
+				}
+				new_means = new_means / mu_classes[k].size();
+				//stddev
+				for (int i = 0; i < mu_classes[k].size(); i++) {
+					stddev[k] += pow(mu_classes[k][i] - new_means, 2);
+				}
+				stddev[k] = sqrt(stddev[k] / mu_classes[k].size());
 			}
-			new_means = new_means / mu_classes[k].size();
-			//stddev
-			for (int i = 0; i < mu_classes[k].size(); i++) {
-				stddev[k] += pow(mu_classes[k][i] - new_means, 2);
-			}
-			stddev[k] = sqrt(stddev[k] / mu_classes[k].size());
+			else
+				int pp = 0;
 			means[k] = new_means;
 		}
 		T = T * coolingRate;
-	} while (T > Tmin);
+	} while (T > Tmin || !same_means);
 
 	delete[] means;
 	delete[] stddev;
@@ -803,7 +814,7 @@ void MImage::MSASegmentation(float beta, float Tmin, float Tmax, float coolingRa
 	{
 		for (int x = 0; x < MXSize(); x++)
 		{
-			MImgBuf[x][y].r = (((nbClasses - 1) - map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
+			MImgBuf[x][y].r = ((map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
 		}
 	}
 }
