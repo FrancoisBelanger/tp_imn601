@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{33C7A608-3753-4677-8E77-36012708D560}</ProjectGuid>
+    <ProjectGuid>{6A7AC06D-DE70-49AE-BF46-F5C130B744E8}</ProjectGuid>
     <RootNamespace>TPIMN601</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -74,6 +74,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -110,14 +111,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\prog\gc\GCoptimization.cpp" />
+    <ClCompile Include="..\prog\gc\graph.cpp" />
+    <ClCompile Include="..\prog\gc\LinkedBlockList.cpp" />
+    <ClCompile Include="..\prog\gc\maxflow.cpp" />
     <ClCompile Include="..\prog\MImage.cpp" />
-    <ClCompile Include="..\prog\tp1A.cpp" />
-    <ClCompile Include="..\prog\tp1B.cpp" />
+    <ClCompile Include="..\prog\tp1C.cpp" />
+    <ClCompile Include="..\prog\tp1E.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\prog\Makefile" />
-  </ItemGroup>
-  <ItemGroup>
+    <ClInclude Include="..\prog\gc\block.h" />
+    <ClInclude Include="..\prog\gc\energy.h" />
+    <ClInclude Include="..\prog\gc\GCoptimization.h" />
+    <ClInclude Include="..\prog\gc\graph.h" />
+    <ClInclude Include="..\prog\gc\LinkedBlockList.h" />
     <ClInclude Include="..\prog\MImage.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
