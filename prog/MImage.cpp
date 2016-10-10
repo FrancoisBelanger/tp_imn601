@@ -437,7 +437,7 @@ Resulting values are copied in parameters 'means','stddev', and 'apriori'
 The 'apriori' parameter contains the proportion of each class.
 The resulting label Field is copied in the current image (this->MImgBuf)
 */
-void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, int nbClasses)
+std::vector<std::vector<int> > MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, int nbClasses)
 {
 	init_k_means(*this, means, nbClasses);
 	std::vector<std::vector<int> > map_black_white(MXS, std::vector<int>(MYS, 0));
@@ -496,6 +496,7 @@ void MImage::MKMeansSegmentation(float *means, float *stddev, float *apriori, in
 			MImgBuf[x][y].r = ((map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
 		}
 	}
+	return map_black_white;
 }
 
 /*
@@ -602,7 +603,7 @@ void MImage::MExpectationMaximization(float *means, float *stddev, float *aprior
 {
 }
 
-void calculate_w(int *w, MImage &X_s, int xSeed, int ySeed, float *means, int nbClasses) {
+void calculate_w(int *w, std::vector<std::vector<int>> &map_black_white, int xSeed, int ySeed, float *means, int nbClasses) {
 	std::vector<std::pair<int, int>> x_y;
 	x_y.push_back(std::pair<int, int>(xSeed + 1, ySeed));
 	x_y.push_back(std::pair<int, int>(xSeed - 1, ySeed));
@@ -619,15 +620,19 @@ void calculate_w(int *w, MImage &X_s, int xSeed, int ySeed, float *means, int nb
 	}
 
 	for (auto i = x_y.begin(); i != x_y.end(); i++) {
-		if (i->first >= 0 && i->first < X_s.MXSize() && i->second >= 0 && i->second < X_s.MYSize()) {
+		if (i->first >= 0 && i->first < map_black_white.size() && i->second >= 0 && i->second < map_black_white[0].size()) {
+			for (int k = 0; k < nbClasses; k++) {
+				if (map_black_white[i->first][i->second] != k)
+					w[k] += 1;
+			}
 			//find mean of class more near than point (x,y)
-			int k = 0;
+			/*int k = 0;
 			for (int j = 1; j < nbClasses; j++) {
 				if (abs(means[k] - X_s.MGetColor(i->first, i->second)) > std::abs(means[j] - X_s.MGetColor(i->first, i->second))) {
 					k = j;
 				}
 			}
-			w[k] += 1;
+			w[k] += 1;*/
 		}
 	}
 }
@@ -647,7 +652,7 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 	stddev = new float[nbClasses];
 	apriori = new float[nbClasses];
 	img_orig = *this;
-	MKMeansSegmentation(means, stddev, apriori, nbClasses);
+	std::vector<std::vector<int>> map_black_white = MKMeansSegmentation(means, stddev, apriori, nbClasses);
 
 	/*img_prev = *this;
 	printf(" Means : "); for (int i = 0; i<nbClasses; i++) printf(" %f", means[i]);
@@ -656,11 +661,10 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 	printf("\n");
 	img_prev.MRescale();
 	img_prev.MSaveImage("outKMeans.pgm", PGM_ASCII);*/
-
-	/*std::vector<std::vector<int> > map_black_white(MXS, std::vector<int>(MYS, 0));*/
+	
 	bool same_means = true;
 	do{
-		img_prev = *this;
+		//img_prev = *this;
 		same_means = true;
 		int nb_pxl_diff = 0;
 		std::vector<std::vector<float> > mu_classes(nbClasses);
@@ -674,20 +678,21 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 				int tag_min = 0;
 				int *w;
 				w = new int[nbClasses];
-				calculate_w(w, img_prev, x, y, means, nbClasses);
+				calculate_w(w, map_black_white, x, y, means, nbClasses);
 				for (int k = 0; k < nbClasses; k++) {
-					float u = -std::log(exp(-pow(img_prev.MImgBuf[x][y].r * 1.0f - means[k], 2) / (2 * pow(stddev[k], 2))) / (stddev[k] * pow(2 * M_PI, 0.5)));
+					float u = -std::log(exp(-pow(img_orig.MImgBuf[x][y].r * 1.0f - means[k], 2) / (2 * pow(stddev[k], 2))) / (stddev[k] * pow(2 * M_PI, 0.5)));
 					tag[k] = u + (w[k] * beta);
 					if (tag_min != k && (tag[k] - tag[tag_min]) < 0.0f) {
 						tag_min = k;
 					}
 				}
-				MImgBuf[x][y].r = ((tag_min * 1.0f) / (nbClasses - 1)) * 255.0f;
+				//MImgBuf[x][y].r = ((tag_min * 1.0f) / (nbClasses - 1)) * 255.0f;
 				mu_classes[tag_min].push_back(img_orig.MImgBuf[x][y].r);
-				if (abs(MImgBuf[x][y].r - img_prev.MImgBuf[x][y].r) > 1.0f) {
+				if (tag_min != map_black_white[x][y]) {
 					same_means = false;
 					nb_pxl_diff++;
 				}
+				map_black_white[x][y] = tag_min;
 			}
 		}
 		printf("\n diff pxl: %i", nb_pxl_diff);
@@ -717,6 +722,15 @@ void MImage::MICMSegmentation(float beta, int nbClasses)
 		}
 
 	} while (!same_means);
+
+	//new image
+	for (int y = 0; y < MYSize(); y++)
+	{
+		for (int x = 0; x < MXSize(); x++)
+		{
+			MImgBuf[x][y].r = ((map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
+		}
+	}
 }
 
 /*

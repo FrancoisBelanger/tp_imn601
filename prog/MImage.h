@@ -73,7 +73,7 @@ class MImage{
 		/* Segmentation */
 		void MMagicWand(int xSeed, int ySeed, float tolerance);
 		void MOptimalThresholding(float *means,float *stddev,float *apriori,int nbClasses);
-		void MKMeansSegmentation(float *means,float *stddev,float *apriori,int nbClasses);
+		std::vector<std::vector<int> > MKMeansSegmentation(float *means,float *stddev,float *apriori,int nbClasses);
 		void MSoftKMeansSegmentation(float *means,float *stddev,float *apriori,float beta,int nbClasses);
 		void MExpectationMaximization(float *means,float *stddev,float *apriori, int nbClasses);
 		void MICMSegmentation(float beta, int nbClasses);
