@@ -1,6 +1,6 @@
 /*
-Francois Belanger 94 245 437
-Genevieve Dostie 12 078 306
+	Francois Belanger 94 245 437
+	Genevieve Dostie
 */
 
 #include "MImage.h"
@@ -12,19 +12,19 @@ Genevieve Dostie 12 078 306
 #include <algorithm>
 #include <time.h>
 
-MImage::MImage(int xs, int ys, int zs)
+MImage::MImage(int xs,int ys,int zs)
 {
 	MXS = 0;
 	MYS = 0;
 	MZS = 0;
-	MImgBuf = NULL;
+	MImgBuf=NULL;
 
-	if (xs>0 && ys>0 && zs>0)
-		MAllocMemory(xs, ys, zs);
+	if(xs>0 && ys>0 && zs>0)
+		MAllocMemory(xs,ys,zs);
 
-	for (int y = 0; y<MYS; y++)
-		for (int x = 0; x<MXS; x++)
-			MSetColor(0, x, y);
+	for(int y=0;y<MYS;y++)
+		for(int x=0;x<MXS;x++)
+			MSetColor(0,x,y);
 }
 MImage::MImage(void)
 {
