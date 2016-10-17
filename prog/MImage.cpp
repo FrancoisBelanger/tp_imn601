@@ -489,7 +489,7 @@ std::vector<std::vector<int> > MImage::MKMeansSegmentation(float *means, float *
 			//apriori
 			apriori[k] = (mu_classes[k].size() * 1.0f) / (MXS * MYS);
 
-			if (fabs(means[k] - new_means) > std::numeric_limits<float>::epsilon()) {
+			if (abs(means[k] - new_means) > std::numeric_limits<float>::epsilon()) {
 				same_means = false;
 			}
 			means[k] = new_means;
@@ -515,8 +515,10 @@ The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori, float beta, int nbClasses)
 {
-	init_k_means(*this, means, nbClasses);
-	std::vector<std::vector<std::vector<float> > > map_black_white(MXS, std::vector<std::vector<float> >(MYS, std::vector<float>(nbClasses, 0.0f)));
+	MImage im2(*this);
+	im2.MKMeansSegmentation(means, stddev, apriori, nbClasses);
+	std::vector<std::vector<int> > map_black_white(MXS, std::vector<int>(MYS, 0));
+	std::vector<std::vector<std::vector<float> > > p_c_xs(MXS, std::vector<std::vector<float> >(MYS, std::vector<float>(nbClasses, 0.0f)));
 
 	//Calculate means while mean not converge
 	bool same_means = true;
@@ -528,7 +530,7 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 			for (int x = 0; x < MXSize(); x++)
 			{
 				for (int k = 0; k < nbClasses; k++) {
-					map_black_white[x][y][k] = exp(-(beta * std::abs(MImgBuf[x][y].r - means[k])));
+					p_c_xs[x][y][k] = exp(-(beta * abs(MImgBuf[x][y].r - means[k])));
 				}
 			}
 		}
@@ -543,14 +545,14 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 				//calcul d_r
 				float d_r = 0.0f;
 				for (int i = 0; i < nbClasses; i++)
-					d_r += map_black_white[x][y][i];
+					d_r += p_c_xs[x][y][i];
 
 				for (int k = 0; k < nbClasses; k++) {
 					//P(c|x_s)
-					map_black_white[x][y][k] = map_black_white[x][y][k] / d_r;
+					p_c_xs[x][y][k] = p_c_xs[x][y][k] / d_r;
 					//means
-					new_means[k] += (map_black_white[x][y][k] * MImgBuf[x][y].r);
-					sum_denum_means[k] += map_black_white[x][y][k];
+					new_means[k] += (p_c_xs[x][y][k] * MImgBuf[x][y].r);
+					sum_denum_means[k] += p_c_xs[x][y][k];
 				}
 			}
 		}
@@ -571,9 +573,10 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 			{
 				int c = 0;
 				for (int k = 1; k < nbClasses; k++) {
-					if (fabs(map_black_white[x][y][c] - map_black_white[x][y][k]) < 0.5)
+					if (abs(p_c_xs[x][y][c] - p_c_xs[x][y][k]) < 0.5)
 						c = k;
 				}
+				map_black_white[x][y] = c;
 				mu_classes[c].push_back(MImgBuf[x][y].r);
 				apriori[c] += 1;
 			}
@@ -596,6 +599,15 @@ void MImage::MSoftKMeansSegmentation(float *means, float *stddev, float *apriori
 			means[k] = new_means[k];
 		}
 	} while (!same_means);
+
+	//new image
+	for (int y = 0; y < MYSize(); y++)
+	{
+		for (int x = 0; x < MXSize(); x++)
+		{
+			MImgBuf[x][y].r = ((map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
+		}
+	}
 }
 
 
@@ -609,6 +621,119 @@ The resulting label Field is copied in the current image (this->MImgBuf)
 */
 void MImage::MExpectationMaximization(float *means, float *stddev, float *apriori, int nbClasses)
 {
+	MImage im2(*this);
+	im2.MKMeansSegmentation(means, stddev, apriori, nbClasses);
+	std::vector<std::vector<int> > map_black_white(MXS, std::vector<int>(MYS, 0));
+	std::vector<std::vector<std::vector<float> > > p_xs_c(MXS, std::vector<std::vector<float> >(MYS, std::vector<float>(nbClasses, 0.0f)));
+	std::vector<std::vector<std::vector<float> > > p_c_xs(MXS, std::vector<std::vector<float> >(MYS, std::vector<float>(nbClasses, 0.0f)));
+	std::vector<float> p_c(nbClasses, 0.0f);
+
+	//init params
+	for (int y = 0; y < MYSize(); y++)
+	{
+		for (int x = 0; x < MXSize(); x++)
+		{
+			for (int k = 0; k < nbClasses; k++) {
+				p_xs_c[x][y][k] = exp(-pow(MImgBuf[x][y].r - means[k], 2) / (2 * stddev[k] * stddev[k])) / (pow(2 * M_PI, 0.5f) * stddev[k]);
+				p_c[k] += p_xs_c[x][y][k];
+			}
+		}
+	}
+	for (int k = 0; k < nbClasses; k++) {
+		p_c[k] = p_c[k] / (MXS * MYS);
+	}
+
+
+	//Calculate means while mean not converge
+	bool same_means = true;
+	do {
+		same_means = true;
+		//calculate p(x_s, c) = p_xs_c and part of new p(c) = new_p_c
+		for (int y = 0; y < MYSize(); y++)
+		{
+			for (int x = 0; x < MXSize(); x++)
+			{
+				for (int k = 0; k < nbClasses; k++) {
+					p_xs_c[x][y][k] = exp(-pow(MImgBuf[x][y].r - means[k], 2) / (2 * stddev[k] * stddev[k])) * (pow(2 * M_PI, 0.5f) * stddev[k]);
+				}
+			}
+		}
+		//calculate p(c|x_s) = p_c_xs
+		for (int y = 0; y < MYSize(); y++)
+		{
+			for (int x = 0; x < MXSize(); x++)
+			{
+				//calculate sum p(x_s|i)*p(i)
+				float sum_prob_pxl = 0.0f;
+				for (int i = 0; i < nbClasses; i++) {
+					sum_prob_pxl += p_xs_c[x][y][i] * p_c[i];
+				}
+				for (int k = 0; k < nbClasses; k++) {
+					if (sum_prob_pxl < 0.0f) {
+						p_c_xs[x][y][k] = 0.0f;
+						continue;
+					}
+					p_c_xs[x][y][k] = (p_xs_c[x][y][k] * p_c[k]) / sum_prob_pxl;
+				}
+			}
+		}
+
+		std::vector<float> new_means(nbClasses, 0.0f);
+		std::vector<float> new_stddev(nbClasses, 0.0f);
+		std::vector<float> new_p_c(nbClasses, 0.0f);
+		//init apriori
+		for (int k = 0; k < nbClasses; k++) {
+			apriori[k] = 0;
+		}
+
+		for (int y = 0; y < MYSize(); y++)
+		{
+			for (int x = 0; x < MXSize(); x++)
+			{
+				int tag = 0;
+				for (int k = 0; k < nbClasses; k++) {
+					new_means[k] += p_c_xs[x][y][k] * p_c[k];
+					new_stddev[k] += p_c_xs[x][y][k] * (MImgBuf[x][y].r - means[k]) * (MImgBuf[x][y].r - means[k]);
+					new_p_c[k] += p_c_xs[x][y][k];
+					//find class who dominate others
+					if (abs(MImgBuf[x][y].r - new_means[k]) < abs(MImgBuf[x][y].r - new_means[tag])) {
+						tag = k;
+					}
+				}
+				map_black_white[x][y] = tag;
+				apriori[tag] += 1;
+			}
+		}
+		printf("\n");
+		//int nb_diff = 0;
+		for (int k = 0; k < nbClasses; k++) {
+			new_means[k] = new_means[k] / new_p_c[k];
+			new_stddev[k] = new_stddev[k] / new_p_c[k];
+			new_p_c[k] = new_p_c[k] / (MXSize() * MYSize());
+			apriori[k] = apriori[k] / (MXSize() * MYSize());
+			//check params is similar
+			if (abs(new_means[k] - means[k]) > 0.5f || abs(new_stddev[k] - stddev[k]) > 0.5f || abs(new_p_c[k] - p_c[k]) > 0.5f) {
+				//nb_diff++;
+				printf("\nDif: means = %f ; stddev = %f ; P(c) = %f ; apriori = %f", abs(new_means[k] - means[k]), abs(new_stddev[k] - stddev[k]), abs(new_p_c[k] - p_c[k]), 
+					abs(new_stddev[k] - stddev[k]), apriori);
+				same_means = false;
+			}
+			means[k] = new_means[k];
+			stddev[k] = new_stddev[k];
+			p_c[k] = new_p_c[k];
+		}
+		/*if(nb_diff > nbClasses * 0.5)
+			same_means = false;*/
+	} while (!same_means);
+
+	//new image
+	for (int y = 0; y < MYSize(); y++)
+	{
+		for (int x = 0; x < MXSize(); x++)
+		{
+			MImgBuf[x][y].r = ((map_black_white[x][y] * 1.0f) / (nbClasses - 1)) * 255;
+		}
+	}
 }
 
 void calculate_w(int *w, std::vector<std::vector<int>> &map_black_white, int xSeed, int ySeed, float *means, int nbClasses) {

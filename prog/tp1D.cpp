@@ -7,8 +7,9 @@
 
 /*
 	Mean shift image segmentation
+	"C:\Users\Genevieve\Git\TPIMN601\img\butterfly.pgm" 15 30
 */
-int main(int argc, char **argv)
+int main3(int argc, char **argv)
 {
 	MImage img;
 	

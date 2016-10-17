@@ -39,6 +39,9 @@
     <ClCompile Include="..\prog\tp1D.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="..\prog\tp1B.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\prog\MImage.h">
